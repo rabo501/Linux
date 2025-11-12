@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Dane do logowania
-NAS_USER="user1"
-NAS_PASS="password01"
+# Wczytaj dane logowania z pliku
+source /home/twojuser/nas_credentials
+
+# Parametry NAS
 NAS_SHARE="//192.168.55.4/backup"
 MOUNT_POINT="/mnt/synology_backup"
 
-# Dane do bazy
+# Parametry bazy
 PG_USER="postgres"
 PG_DB="nazwa_bazy"
 PG_HOST="localhost"
-PG_PASS="twoje_haslo_do_bazy"
 
 # Nazwa pliku backupu z datą
 BACKUP_FILE="pg_backup_$(date +%Y-%m-%d_%H-%M-%S).sql"
@@ -20,7 +20,6 @@ mkdir -p "$MOUNT_POINT"
 
 # Montowanie udziału sieciowego
 mount -t cifs "$NAS_SHARE" "$MOUNT_POINT" -o username=$NAS_USER,password=$NAS_PASS
-
 if [ $? -ne 0 ]; then
   echo "Błąd montowania udziału sieciowego!"
   exit 1
@@ -28,7 +27,6 @@ fi
 
 # Tworzenie backupu
 PGPASSWORD="$PG_PASS" pg_dump -U $PG_USER -h $PG_HOST $PG_DB > "/tmp/$BACKUP_FILE"
-
 if [ $? -ne 0 ]; then
   echo "Błąd backupu bazy!"
   umount "$MOUNT_POINT"
@@ -37,7 +35,6 @@ fi
 
 # Przeniesienie backupu na NAS
 mv "/tmp/$BACKUP_FILE" "$MOUNT_POINT/"
-
 if [ $? -eq 0 ]; then
   echo "Backup zapisany na NAS: $MOUNT_POINT/$BACKUP_FILE"
 else
